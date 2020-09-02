@@ -12,7 +12,7 @@ Promise.allNamed = require("../utils/sequentialPromiseNamed.js")
 module.exports = (deployer, network, accounts) => {
 
   let web3
-  if (network == 'development') {
+  if (network == 'develop') {
     const {
       host,
       port,
