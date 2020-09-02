@@ -1,5 +1,5 @@
-
-  pragma solidity ^0.4.11;
+// SPDX-License-Identifier: UNLICENSED
+  pragma solidity ^0.7.0;
 
   import './Token.sol';
   import './SafeMath.sol';
@@ -41,7 +41,7 @@
           if(stage == _stage) _;
       }
 
-      function C20Vesting(address _token, uint256 fundingEndBlockInput) {
+      constructor(address _token, uint256 fundingEndBlockInput) {
           require(_token != address(0));
           beneficiary = msg.sender;
           fundingEndBlock = fundingEndBlockInput;
@@ -54,15 +54,15 @@
           beneficiary = newBeneficiary;
       }
 
-      function updateFundingEndBlock(uint256 newFundingEndBlock) {
+      function updateFundingEndBlock(uint256 newFundingEndBlock) public {
           require(msg.sender == beneficiary);
           require(block.number < fundingEndBlock);
           require(block.number < newFundingEndBlock);
           fundingEndBlock = newFundingEndBlock;
       }
 
-      function checkBalance() constant returns (uint256 tokenBalance) {
-          return ERC20Token.balanceOf(this);
+      function checkBalance() public view returns (uint256 tokenBalance) {
+          return ERC20Token.balanceOf(address(this));
       }
 
       // in total 13% of C20 tokens will be sent to this contract
@@ -79,7 +79,7 @@
       function claim() external {
           require(msg.sender == beneficiary);
           require(block.number > fundingEndBlock);
-          uint256 balance = ERC20Token.balanceOf(this);
+          uint256 balance = ERC20Token.balanceOf(address(this));
           // in reverse order so stages changes don't carry within one claim
           fourth_release(balance);
           third_release(balance);
@@ -93,34 +93,34 @@
       }
 
       function init_claim(uint256 balance) private atStage(Stages.initClaim) {
-          firstRelease = now + 26 weeks; // assign 4 claiming times
+          firstRelease = block.timestamp + 26 weeks; // assign 4 claiming times
           secondRelease = firstRelease + 26 weeks;
           thirdRelease = secondRelease + 26 weeks;
           fourthRelease = thirdRelease + 26 weeks;
           uint256 amountToTransfer = safeMul(balance, 53846153846) / 100000000000;
-          ERC20Token.transfer(beneficiary, amountToTransfer); // now 46.153846154% tokens left
+          ERC20Token.transfer(beneficiary, amountToTransfer); // block.timestamp 46.153846154% tokens left
           nextStage();
       }
       function first_release(uint256 balance) private atStage(Stages.firstRelease) {
-          require(now > firstRelease);
+          require(block.timestamp > firstRelease);
           uint256 amountToTransfer = balance / 4;
           ERC20Token.transfer(beneficiary, amountToTransfer); // send 25 % of team releases
           nextStage();
       }
       function second_release(uint256 balance) private atStage(Stages.secondRelease) {
-          require(now > secondRelease);
+          require(block.timestamp > secondRelease);
           uint256 amountToTransfer = balance / 3;
           ERC20Token.transfer(beneficiary, amountToTransfer); // send 25 % of team releases
           nextStage();
       }
       function third_release(uint256 balance) private atStage(Stages.thirdRelease) {
-          require(now > thirdRelease);
+          require(block.timestamp > thirdRelease);
           uint256 amountToTransfer = balance / 2;
           ERC20Token.transfer(beneficiary, amountToTransfer); // send 25 % of team releases
           nextStage();
       }
       function fourth_release(uint256 balance) private atStage(Stages.fourthRelease) {
-          require(now > fourthRelease);
+          require(block.timestamp > fourthRelease);
           ERC20Token.transfer(beneficiary, balance); // send remaining 25 % of team releases
       }
 
@@ -129,7 +129,7 @@
           require(_token != address(0));
           Token token = Token(_token);
           require(token != ERC20Token);
-          uint256 balance = token.balanceOf(this);
+          uint256 balance = token.balanceOf(address(this));
           token.transfer(beneficiary, balance);
        }
 
